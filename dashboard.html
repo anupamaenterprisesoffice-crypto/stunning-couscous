@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VStock Pro</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: radial-gradient(circle at top, #0f2e1c, #020617 70%);
+    color: white;
+}
+
+.nav {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.6);
+}
+
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    border: none;
+    border-radius: 8px;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.chat-box {
+    height: 150px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+    <div>VStock Pro</div>
+    <div id="userDisplay"></div>
+</div>
+
+<div class="container">
+
+<!-- BALANCE -->
+<div class="card">
+    <h3>Balance</h3>
+    <p id="balance"></p>
+</div>
+
+<!-- STOCK -->
+<div class="card">
+    <h3>📊 Stock Market</h3>
+    <p>Price: £ <span id="price"></span></p>
+    <button onclick="buy()">Buy</button>
+    <button onclick="sell()">Sell</button>
+</div>
+
+<!-- PORTFOLIO -->
+<div class="card">
+    <h3>📦 Portfolio</h3>
+    <p id="stocks"></p>
+</div>
+
+<!-- SEND -->
+<div class="card">
+    <h3>💸 Send Money</h3>
+    <input id="toUser" placeholder="Username">
+    <input id="amount" type="number" placeholder="Amount">
+    <button onclick="send()">Send</button>
+</div>
+
+<!-- CHAT -->
+<div class="card">
+    <h3>💬 Global Chat</h3>
+    <div class="chat-box" id="chat"></div>
+    <input id="msg">
+    <button onclick="chatSend()">Send</button>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="card">
+    <h3>🏆 Leaderboard</h3>
+    <div id="lb"></div>
+</div>
+
+<!-- ADMIN -->
+<div class="card" id="admin" style="display:none;">
+    <h3>👑 Admin Panel</h3>
+
+    <input id="adminUser" placeholder="User">
+    <input id="adminAmount" type="number" placeholder="Amount">
+    <button onclick="addMoney()">Add Money</button>
+    <button onclick="removeMoney()">Remove Money</button>
+    <button onclick="clearChat()">Clear Chat</button>
+</div>
+
+</div>
+
+<script>
+let user = localStorage.getItem("user");
+let role = localStorage.getItem("role");
+
+if(!user) location.href="index.html";
+
+document.getElementById("userDisplay").innerText =
+role==="admin"? user+" 👑":user;
+
+if(role==="admin"){
+document.getElementById("admin").style.display="block";
+}
+
+let balance = parseInt(localStorage.getItem("balance"));
+let stocks = parseInt(localStorage.getItem("stocks")||0);
+
+function update(){
+document.getElementById("balance").innerText="£ "+balance;
+document.getElementById("stocks").innerText=stocks+" stocks";
+}
+update();
+
+/* STOCK */
+let price=100;
+setInterval(()=>{
+price+=Math.floor(Math.random()*10-5);
+document.getElementById("price").innerText=price;
+},2000);
+
+function buy(){
+if(balance>=price){
+balance-=price;
+stocks++;
+save();
+}
+}
+
+function sell(){
+if(stocks>0){
+stocks--;
+balance+=price;
+save();
+}
+}
+
+function save(){
+localStorage.setItem("balance",balance);
+localStorage.setItem("stocks",stocks);
+localStorage.setItem("user_"+user,balance);
+update();
+}
+
+/* SEND */
+function send(){
+let to=document.getElementById("toUser").value;
+let amt=parseInt(document.getElementById("amount").value);
+
+if(balance<amt) return alert("Not enough");
+
+balance-=amt;
+let rb=parseInt(localStorage.getItem("user_"+to)||0);
+rb+=amt;
+
+localStorage.setItem("user_"+to,rb);
+save();
+}
+
+/* CHAT */
+function chatSend(){
+let m=document.getElementById("msg").value;
+let c=localStorage.getItem("chat")||"";
+c+="<p><b>"+user+":</b> "+m+"</p>";
+localStorage.setItem("chat",c);
+loadChat();
+}
+function loadChat(){
+document.getElementById("chat").innerHTML=
+localStorage.getItem("chat")||"";
+}
+loadChat();
+
+/* LEADERBOARD */
+function loadLB(){
+let html="";
+for(let k in localStorage){
+if(k.startsWith("user_")){
+let n=k.replace("user_","");
+let b=localStorage.getItem(k);
+html+="<p>"+n+" - £"+b+"</p>";
+}
+}
+document.getElementById("lb").innerHTML=html;
+}
+loadLB();
+
+/* ADMIN */
+function addMoney(){
+let u=document.getElementById("adminUser").value;
+let a=parseInt(document.getElementById("adminAmount").value);
+
+let b=parseInt(localStorage.getItem("user_"+u)||0);
+b+=a;
+localStorage.setItem("user_"+u,b);
+loadLB();
+}
+
+function removeMoney(){
+let u=document.getElementById("adminUser").value;
+let a=parseInt(document.getElementById("adminAmount").value);
+
+let b=parseInt(localStorage.getItem("user_"+u)||0);
+b-=a;
+localStorage.setItem("user_"+u,b);
+loadLB();
+}
+
+function clearChat(){
+localStorage.removeItem("chat");
+loadChat();
+}
+</script>
+
+</body>
+</html>
